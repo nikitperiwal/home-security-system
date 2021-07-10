@@ -65,32 +65,6 @@ class HomeSecuritySystem:
         labels = [get_labels(p) for p in pred]
         return labels
 
-    @staticmethod
-    def remove_extra_faces(detected_list):
-        prev_length = 0
-        new_list = []
-
-        def check_similar(clist1, clist2, threshold=20):
-            for c1, c2 in zip(clist1, clist2):
-                x = (c2[0] - c1[0]) ** 2
-                y = (c2[1] - c1[1]) ** 2
-                if (x+y)*0.5 > threshold:
-                    return True
-            return False
-
-        for detected in detected_list:
-            if len(detected) == prev_length:
-                if check_similar(detected, new_list[-1]):
-                    new_list.append(detected)
-                    prev_length = len(detected)
-                else:
-                    pass
-            else:
-                new_list.append(detected)
-                prev_length = len(detected)
-
-        return new_list
-
     # TODO
     @staticmethod
     def start_detecting(vid_stream: tuple = None, video_src: str = None):
@@ -124,6 +98,7 @@ class HomeSecuritySystem:
         # pass queue to detect_faces()
         # get return coordinates list
         # pass co-ordinates list to remove_extra_faces
+
 
 if __name__ == '__main__':
     HomeSecuritySystem().start_detecting((cv2.VideoCapture(0), True))
