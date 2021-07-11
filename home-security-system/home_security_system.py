@@ -37,6 +37,18 @@ class HomeSecuritySystem:
         self.registered_faces[name] = convolve_images(face_images)
 
     def check_registered(self, detected_faces):
+        """
+        Compares the passed detected_faces to registered_faces and return the labels.
+
+        Parameters
+        -----------
+        detected_faces: list of faces detected from video
+
+        Returns
+        --------
+        labels: labels of faces passed
+        """
+
         detected_faces = convolve_images(detected_faces)
 
         num_det = len(detected_faces)
@@ -65,7 +77,6 @@ class HomeSecuritySystem:
         labels = [get_labels(p) for p in pred]
         return labels
 
-    # TODO
     @staticmethod
     def start_detecting(vid_stream: tuple = None, video_src: str = None):
         """
@@ -76,6 +87,7 @@ class HomeSecuritySystem:
         vid_stream: A tuple containing cv2.VideoCapture object and a cam_flag
         video_src: Selects the source for cv2.VideoCapture object
         """
+
         if vid_stream is None:
             vid_stream = (cv2.VideoCapture(0), True) if video_src is None or video_src == "" \
                 else (cv2.VideoCapture(video_src), False)
