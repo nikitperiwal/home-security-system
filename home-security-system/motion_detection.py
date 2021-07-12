@@ -44,7 +44,8 @@ def update_init_frame(init_frame, update_init_thres, counter):
     """
 
     if init_frame is None:
-        print('Started detecting')
+        # TODO remove after testing
+        print('Started motion_detection')
         return True, counter
 
     # If the movement lasts for more than threshold, update the initial frame
@@ -95,8 +96,8 @@ def process_movement(init_frame, frame, processed_queue, time_queue, processed_f
         if counter['no_mov'] >= frame_padding:
             # Save the video and start recording again
             if counter['mov_total'] > 10:
-                processed_queue.put(processed_frames)
                 time_queue.put(str(time.strftime("%d-%m-%Y-%H-%M-%S", time.localtime())))
+                processed_queue.put(processed_frames)
             movement_flag, init_frame, processed_frames = False, None, []
             counter['mov'], counter['no_mov'], counter['mov_total'] = 0, 0, 0
             # If the video has some unprocessed frames left, run them till all frames are processed
@@ -129,22 +130,23 @@ def motion_detection(queue: Queue, processed_queue: Queue, time_queue: Queue, st
     update_init_thres:
     """
 
+    verify_motion_args(queue, processed_queue, time_queue, threshold_val,
+                       min_contour_area, update_init_thres, frame_padding)
+
+    frame_padding = frame_padding if frame_padding > -1 else stream_fps * 2
+    counter = {'mov': 0, 'no_mov': 0, 'mov_total': 0}
+    init_frame = None
+    movement_flag = False
+    processed_frames = []
+
     try:
-        verify_motion_args(queue, processed_queue, time_queue, threshold_val,
-                           min_contour_area, update_init_thres, frame_padding)
-
-        frame_padding = frame_padding if frame_padding > -1 else stream_fps * 2
-        counter = {'mov': 0, 'no_mov': 0, 'mov_total': 0}
-        init_frame = None
-        movement_flag = False
-        processed_frames = []
-
         while True:
             frames = queue.get()
             if frames == "End":
                 break
             # Looping through each frame
             for frame in frames:
+
                 # Updating the initial frame
                 init_flag, counter = update_init_frame(init_frame, update_init_thres, counter)
                 if init_flag:
@@ -156,9 +158,15 @@ def motion_detection(queue: Queue, processed_queue: Queue, time_queue: Queue, st
                                                                             time_queue, processed_frames, counter,
                                                                             movement_flag, threshold_val,
                                                                             min_contour_area, frame_padding)
+                # TODO notify user if movement greater than thres
+                if counter['mov_total'] > (2 * stream_fps):
+                    pass
 
     except Exception as e:
         print(e)
 
     finally:
+        if processed_frames:
+            time_queue.put(str(time.strftime("%d-%m-%Y-%H-%M-%S", time.localtime())))
+            processed_queue.put(processed_frames)
         processed_queue.put("End")

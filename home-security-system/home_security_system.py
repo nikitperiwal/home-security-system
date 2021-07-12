@@ -2,17 +2,18 @@ import cv2
 import numpy as np
 from queue import Queue
 from threading import Thread
-
+'''
 from face_detection import detect_from_video
-from face_recognition import convolve_images, check_similarity
-from motion_detection import motion_detection
+from face_recognition import convolve_images, check_similarity'''
 from video_stream import video_stream, save_queue
+from motion_detection import motion_detection
 
 
 class HomeSecuritySystem:
     def __init__(self):
         self.registered_faces = {}
 
+    '''
     def face_register(self, name: str, face_images: np.ndarray):
         """
         Registers faces as secure, along with name.
@@ -76,11 +77,11 @@ class HomeSecuritySystem:
 
         labels = [get_labels(p) for p in pred]
         return labels
+'''
 
-    @staticmethod
-    def start_detecting(vid_stream: tuple = None, video_src: str = None):
+    def start_detecting(self, vid_stream: tuple = None, video_src: str = None):
         """
-        Starts detecting motion and recognises a facees of people
+        Starts detecting motion and recognises a faces of people
 
         Parameters
         ----------
@@ -96,15 +97,24 @@ class HomeSecuritySystem:
         t1 = Thread(target=video_stream, args=(queue, vid_stream))
         stream_fps = int(vid_stream[0].get(cv2.CAP_PROP_FPS))
         t2 = Thread(target=motion_detection, args=(queue, processed_queue, time_queue, stream_fps))
-        t3 = Thread(target=save_queue, args=(processed_queue, time_queue, stream_fps))
+        # TODO bug fix fps (may vary from pc)
+        t3 = Thread(target=save_queue, args=(processed_queue, time_queue, stream_fps//2))
 
-        t1.start()
-        t2.start()
-        t3.start()
+        try:
+            t1.start()
+            t2.start()
+            t3.start()
+            while t2.is_alive():
+                pass
 
-        t1.join()
-        t2.join()
-        t3.join()
+        except KeyboardInterrupt:
+            print("Stopping the recording")
+
+        finally:
+            vid_stream[0].release()
+            t1.join()
+            t2.join()
+            t3.join()
 
         # get queue of frames
         # pass queue to detect_faces()

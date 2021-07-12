@@ -19,15 +19,17 @@ def video_stream(queue: Queue, video_cap: tuple = None):
         stream_fps = cap.get(cv2.CAP_PROP_FPS)
         frames = []
         stop_flag, init_cam = False, True
-
+        # TODO remove after testing
+        print('Started video_stream')
         while True:
-            for i in range(int(stream_fps)*2):
+            for i in range(int(stream_fps) * 2):
                 ret, frame = cap.read()
                 # Return if video ended
                 if not ret:
                     stop_flag = True
                     break
-                # Executed once when recording is form a camer
+                # Executed once when recording is from a camera
+                # This is done to prevent a
                 elif cam_flag and init_cam:
                     init_cam = False
                     for j in range(10):
@@ -48,7 +50,7 @@ def video_stream(queue: Queue, video_cap: tuple = None):
         queue.put("End")
 
 
-def save_queue(processed_queue: Queue, time_queue: Queue,  fps: int = 30):
+def save_queue(processed_queue: Queue, time_queue: Queue,  fps: int = 24):
     """
     Saving a processed queue as a video
 
@@ -59,17 +61,18 @@ def save_queue(processed_queue: Queue, time_queue: Queue,  fps: int = 30):
     fps: It's used to vary the frames per second for the saved video
     """
 
+    verify_save_args(processed_queue, time_queue, fps)
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    out = None
     try:
-        verify_save_args(processed_queue, time_queue, fps)
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         while True:
-            video_path = "output/" + time_queue.get() + ".mp4"
-            out = cv2.VideoWriter(video_path, fourcc, fps, (1280, 720))
             processed_frames = processed_queue.get()
-            # TODO remove
-            print("Saving Video")
             if processed_frames == "End":
                 break
+            # TODO remove after testing
+            print("Saving Video")
+            video_path = "output/" + time_queue.get() + ".mp4"
+            out = cv2.VideoWriter(video_path, fourcc, fps, (1280, 720))
             for i in range(len(processed_frames)):
                 out.write(cv2.resize(processed_frames.pop(0), (1280, 720)))
 
@@ -77,4 +80,5 @@ def save_queue(processed_queue: Queue, time_queue: Queue,  fps: int = 30):
         print(e)
 
     finally:
-        out.release()
+        if out is not None:
+            out.release()

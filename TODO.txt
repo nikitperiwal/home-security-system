@@ -1,0 +1,8 @@
+Known Bugs:
+1) High fps while saving video with stream fps using video_stream.save_queue
+    temp fix stream_fps//2 line 101 -> home_security_system.py
+
+To implement:
+1) Notify user if movement greater than threshold
+2) Multiple threads for motion detection on multiple camera streams,
+    single thread for face detection and recognition which accesses a combined queue.
