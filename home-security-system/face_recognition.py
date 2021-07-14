@@ -1,70 +1,41 @@
 import numpy as np
-from tensorflow.keras import backend
+import tensorflow as tf
+
+from tensorflow.keras import layers
 from tensorflow.keras.applications import Xception
-from tensorflow.keras.models import Model, Sequential
-from tensorflow.keras.layers import Input, Lambda, Dense, Flatten
+from tensorflow.keras.models import Sequential
 
 
-def convolution_model():
-    """ Defines the Convolution model architecture """
-
-    # Define the tensors for the input image
-    image_input = Input((128, 128, 3), name="Input")
+def get_encoder_model():
+    """ Returns the encoder after creation and loading weights """
 
     # Defining the pretrained base model
-    base_model = Xception(
+    pretrained_model = Xception(
         input_shape=(128, 128, 3),
         weights=None,
         include_top=False,
-        pooling='max',
+        pooling='avg',
     )
 
-    model = Sequential([
-        base_model,
-        Flatten(),
-        Dense(2048, activation='sigmoid')
-    ], name="Xception")
+    # Creating the encoder model
+    encode_model = Sequential([
+        pretrained_model,
+        layers.Flatten(),
+        layers.Dense(512, activation='relu'),
+        layers.BatchNormalization(),
+        layers.Dense(256, activation="relu"),
+        layers.Lambda(lambda x: tf.math.l2_normalize(x, axis=1))
 
-    # Connect the inputs with the outputs
-    return Model(inputs=image_input, outputs=model(image_input), name="Convolution_Model")
-
-
-def similarity_model():
-    """ Defines the Similarity model architecture """
-
-    # Input for the encodings (feature vectors) for the two images.
-    encoded_l = Input((2048,), name="Tensor1")
-    encoded_r = Input((2048,), name="Tensor2")
-
-    # Add a Subtract layer to compute the absolute difference between the encodings
-    l1_layer = Lambda(lambda tensors: backend.abs(tensors[0] - tensors[1]), name='Distance')
-    l1_distance = l1_layer([encoded_l, encoded_r])
-
-    # Add a dense layer with a sigmoid unit to generate the similarity score
-    prediction = Dense(1, activation='sigmoid', name='Prediction')(l1_distance)
-
-    # Connect the inputs with the outputs
-    return Model(inputs=[encoded_l, encoded_r], outputs=prediction, name="Similarity_Model")
-
-
-def get_models():
-    """ Returns the models after creation and loading weights """
-    backend.clear_session()
-
-    # Creating the model architecture
-    model_conv = convolution_model()
-    model_similar = similarity_model()
+    ], name="Encode_Model")
 
     # Loading the model weights
-    model_conv.load_weights("Models/cache_weights")
-    model_similar.load_weights("Models/similar_weights")
-
-    return model_conv, model_similar
+    encode_model.load_weights("Models/encoder")
+    return encode_model
 
 
-def convolve_images(image_list: np.ndarray) -> np.ndarray:
+def encode_images(image_list: np.ndarray) -> np.ndarray:
     """
-    Returns Tensor representation of a list of images.
+    Returns encodings of a list of images.
 
     Parameters
     ----------
@@ -72,7 +43,7 @@ def convolve_images(image_list: np.ndarray) -> np.ndarray:
 
     Returns
     -------
-    image_tensors: List of image tensors
+    encodings: List of feature vectors
     """
 
     # Check Statements
@@ -82,19 +53,19 @@ def convolve_images(image_list: np.ndarray) -> np.ndarray:
     if len(image_list.shape) != 4 or image_list.shape[-3:] != (128, 128, 3):
         raise ValueError("image_list should be of the shape (?, 128, 128, 3)")
 
-    global conv_model
-    image_tensors = conv_model.predict(image_list)
-    return image_tensors
+    global encoder
+    encodings = encoder.predict(image_list)
+    return encodings
 
 
-def check_similarity(tensor_1: np.ndarray, tensor_2: np.ndarray, threshold: float = 0.5) -> np.ndarray:
+def check_similarity(tensor_1: np.ndarray, tensor_2: np.ndarray, threshold: float = 1.3) -> np.ndarray:
     """
     Takes two tensors and returns the similarity between them.
 
     Parameters
     ----------
-    tensor_1 : Tensor representation for Image 1
-    tensor_2 : Tensor representation for Image 2
+    tensor_1 : Encodings for Image 1
+    tensor_2 : Encodings for Image 2
     threshold: The threshold above which the images are similar
 
     Returns
@@ -108,11 +79,10 @@ def check_similarity(tensor_1: np.ndarray, tensor_2: np.ndarray, threshold: floa
     if not isinstance(threshold, float):
         raise ValueError("threshold should have d-type: float")
 
-    global similar_model
-    predictions = similar_model.predict([tensor_1, tensor_2])
-    #predictions = np.where(predictions >= threshold, 1, 0)
-    return predictions
+    distance = np.sum(np.square(tensor_1 - tensor_2), axis=-1)
+    prediction = np.where(distance <= threshold, 0, 1)
+    return prediction
 
 
 # Create the models as global variables
-conv_model, similar_model = get_models()
+encoder = get_encoder_model()

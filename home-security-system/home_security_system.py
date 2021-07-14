@@ -4,7 +4,7 @@ from queue import Queue
 from threading import Thread
 
 from face_detection import detect_from_video
-from face_recognition import convolve_images, check_similarity
+from face_recognition import encode_images, check_similarity
 from video_stream import video_stream, save_queue
 from motion_detection import motion_detection
 
@@ -12,7 +12,6 @@ from motion_detection import motion_detection
 class HomeSecuritySystem:
     def __init__(self):
         self.registered_faces = {}
-
 
     def face_register(self, name: str, face_images: np.ndarray):
         """
@@ -35,7 +34,7 @@ class HomeSecuritySystem:
             print("Only first 3 images for the person would be registered")
             face_images = face_images[:3]
 
-        self.registered_faces[name] = convolve_images(face_images)
+        self.registered_faces[name] = encode_images(face_images)
 
     def check_registered(self, detected_faces):
         """
@@ -50,7 +49,7 @@ class HomeSecuritySystem:
         labels: labels of faces passed
         """
 
-        detected_faces = convolve_images(detected_faces)
+        detected_faces = encode_images(detected_faces)
 
         num_det = len(detected_faces)
         num_reg = len(self.registered_faces)
@@ -78,8 +77,8 @@ class HomeSecuritySystem:
         labels = [get_labels(p) for p in pred]
         return labels
 
-
-    def start_detecting(self, vid_stream: tuple = None, video_src: str = None):
+    @staticmethod
+    def start_detecting(vid_stream: tuple = None, video_src: str = None):
         """
         Starts detecting motion and recognises a faces of people
 
