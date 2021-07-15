@@ -3,6 +3,7 @@ import tensorflow as tf
 
 from tensorflow.keras import layers
 from tensorflow.keras.applications import Xception
+from tensorflow.keras.applications.inception_v3 import preprocess_input
 from tensorflow.keras.models import Sequential
 
 
@@ -54,6 +55,7 @@ def encode_images(image_list: np.ndarray) -> np.ndarray:
         raise ValueError("image_list should be of the shape (?, 128, 128, 3)")
 
     global encoder
+    image_list = preprocess_input(image_list)
     encodings = encoder.predict(image_list)
     return encodings
 
