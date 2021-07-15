@@ -73,7 +73,7 @@ def extract_faces(frame_list, face_index, coords_list):
     prev_index = []
     faces = []
     for frame, indexes in zip(frame_list, face_index):
-        if indexes != prev_index and len(indexes) > 0:
+        if len(indexes) > 0 and indexes != prev_index:
             prev_index = indexes
             for index in indexes:
                 (x1, y1, x2, y2) = coords_list[index]
@@ -118,15 +118,16 @@ def detect_from_video(frame_list):
 
     Returns
     --------
+    coord_list: list cont
     face_list: list containing co-ordinates of the faces in the frame
     face_index: list of face_index that points to faces in face_list
     """
 
-    coords = []
+    frame_coords = []
     for frame in frame_list:
-        coords.append(detect_from_image(frame))
+        frame_coords.append(detect_from_image(frame))
 
-    coords_list, face_index = remove_extra_faces(coords)
-    face_list = extract_faces(frame_list, face_index=face_index, coords_list=coords_list)
+    face_coords, face_index = remove_extra_faces(frame_coords)
+    detected_faces = extract_faces(frame_list=frame_list, face_index=face_index, coords_list=face_coords)
+    return face_index, face_coords, detected_faces
 
-    return face_list, face_index

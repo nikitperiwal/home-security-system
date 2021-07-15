@@ -49,8 +49,6 @@ class HomeSecuritySystem:
         labels: labels of faces passed
         """
 
-        detected_faces = encode_images(detected_faces)
-
         num_det = len(detected_faces)
         num_reg = len(self.registered_faces)
         names = list(self.registered_faces.keys())
@@ -69,13 +67,41 @@ class HomeSecuritySystem:
         pred = pred.mean(axis=-1)
 
         def get_labels(arr):
-            index = arr.argmax()
-            if arr[index] >= 0.5:
+            index = arr.argmin()
+            if arr[index] <= 0.5:
                 return names[index]
-            return None
+            return "Cannot Identify"
 
         labels = [get_labels(p) for p in pred]
         return labels
+
+    def facial_recognition(self, frame_list):
+        # Run face detection and label detected faces
+        face_index, face_coords, detected_faces = detect_from_video(frame_list)
+        detected_faces = encode_images(detected_faces)
+        detected_labels = self.check_registered(detected_faces)
+
+        # Tag labels to individual frames
+        face_labels = []
+        for indexes in face_index:
+            face_labels.append([detected_labels[index] for index in indexes])
+
+        print(face_labels)
+        return
+
+        ## TODO Save the frame list with bounding boxes
+        ## https://stackoverflow.com/questions/56108183/python-opencv-cv2-drawing-rectangle-with-text
+        ## Make it label look good, add background to label
+        ## Can return face_coords, face_labels and use "save_queue" (maybe)
+        (frame_list, face_coords, face_labels)
+
+        intruder_count = sum([1 if label == "Cannot Identify" else 0 for label in detected_faces])
+        if intruder_count/len(detected_faces) >= 0.2:
+            ## windows_notify("Intruder Detected", "Timestamp?")
+            ## Add "pip install win10toast" in "utils"
+            ## Win10Toast needs to be threaded.
+            ## https://pypi.org/project/win10toast/
+            pass
 
     @staticmethod
     def start_detecting(vid_stream: tuple = None, video_src: str = None):
@@ -93,8 +119,9 @@ class HomeSecuritySystem:
                 else (cv2.VideoCapture(video_src), False)
 
         queue, processed_queue, time_queue = Queue(), Queue(), Queue()
-        t1 = Thread(target=video_stream, args=(queue, vid_stream))
         stream_fps = int(vid_stream[0].get(cv2.CAP_PROP_FPS))
+
+        t1 = Thread(target=video_stream, args=(queue, vid_stream))
         t2 = Thread(target=motion_detection, args=(queue, processed_queue, time_queue, stream_fps))
         # TODO bug fix fps (may vary from pc)
         t3 = Thread(target=save_queue, args=(processed_queue, time_queue, stream_fps//2))

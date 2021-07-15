@@ -58,7 +58,7 @@ def encode_images(image_list: np.ndarray) -> np.ndarray:
     return encodings
 
 
-def check_similarity(tensor_1: np.ndarray, tensor_2: np.ndarray, threshold: float = 1.3) -> np.ndarray:
+def check_similarity(tensor_1: np.ndarray, tensor_2: np.ndarray, threshold: float = 1.35) -> np.ndarray:
     """
     Takes two tensors and returns the similarity between them.
 
