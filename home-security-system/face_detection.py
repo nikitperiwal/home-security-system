@@ -129,5 +129,5 @@ def detect_from_video(frame_list):
 
     face_coords, face_index = remove_extra_faces(frame_coords)
     detected_faces = extract_faces(frame_list=frame_list, face_index=face_index, coords_list=face_coords)
-    return face_index, face_coords, detected_faces
+    return frame_coords, face_index, detected_faces
 

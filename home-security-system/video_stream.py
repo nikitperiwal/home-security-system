@@ -1,3 +1,4 @@
+import os
 import cv2
 from queue import Queue
 from utils.check_param import verify_stream_args, verify_save_args
@@ -36,6 +37,7 @@ def video_stream(queue: Queue, video_cap: tuple = None):
                         frame = cap.read()[1]
 
                 frame = cv2.resize(frame, (1280, 720))
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 frames.append(frame)
             queue.put(frames)
 
@@ -64,6 +66,10 @@ def save_queue(processed_queue: Queue, time_queue: Queue,  fps: int = 24):
     verify_save_args(processed_queue, time_queue, fps)
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     out = None
+
+    if not os.path.exists("Detected Videos/"):
+        os.makedirs("Detected Videos/")
+
     try:
         while True:
             processed_frames = processed_queue.get()
@@ -71,10 +77,12 @@ def save_queue(processed_queue: Queue, time_queue: Queue,  fps: int = 24):
                 break
             # TODO remove after testing
             print("Saving Video")
-            video_path = "output/" + time_queue.get() + ".mp4"
+            video_path = "Detected Videos/" + time_queue.get() + ".mp4"
             out = cv2.VideoWriter(video_path, fourcc, fps, (1280, 720))
             for i in range(len(processed_frames)):
-                out.write(cv2.resize(processed_frames.pop(0), (1280, 720)))
+                frame = cv2.resize(processed_frames.pop(0), (1280, 720))
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                out.write(frame)
 
     except Exception as e:
         print(e)

@@ -1,16 +1,14 @@
 Known Bugs:
-1) High fps while saving video with stream fps using video_stream.save_queue
+-----------
+- High(Variable) fps while saving video with stream fps using video_stream.save_queue
     temp fix: stream_fps//2 line 101 -> home_security_system.py
-2) Doesn't work when the registered faces dict is empty.
-    temp fix: register face everytime)
-3) The same face maybe recognised twice
-4) The bounding box might be a little off
-    solution: fix face coordinates, remove_extra_faces coords doesn't align
-5) Memory runs out if movement is for a very long time
 
+- The same face maybe recognised twice (Coords overlap)
+- Memory runs out if movement is for a very long time
+- Win10Toast requires dependencies that isn' pip installed.
 
 To implement:
-1) Notify user if movement greater than threshold
-2) Multiple threads for motion detection on multiple camera streams,
+-------------
+- Multiple threads for motion detection on multiple camera streams,
     single thread for face detection and recognition which accesses a combined queue.
-3) Save registered faces dictionary
+- Variable number of images for registered_faces

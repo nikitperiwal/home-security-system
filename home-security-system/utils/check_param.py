@@ -1,5 +1,5 @@
-from queue import Queue
 import cv2
+from queue import Queue
 
 
 def verify_motion_args(q, processed_q, time_q, threshold_val, min_contour_area, update_init_thres, frame_padding):
@@ -43,3 +43,17 @@ def verify_save_args(q, time_q,  fps):
         raise TypeError("Time queue is not of type queue.Queue")
     elif not isinstance(fps, int):
         raise TypeError("FPS is not of type int")
+
+
+def verify_face_register(name, face_images, registered):
+    """"
+    Verifies the Register_Faces parameter.
+    """
+    if not isinstance(name, str):
+        raise ValueError("name should have d-type: str")
+    if len(name) == 0:
+        raise ValueError("name cannot be empty")
+    if name in list(registered):
+        raise ValueError("Name already exists in Secure Faces List\nPlease enter another Name")
+    if face_images > 3:
+        print("Only first 3 images for the person would be registered")
