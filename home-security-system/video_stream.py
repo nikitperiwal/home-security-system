@@ -22,7 +22,7 @@ def video_stream(queue: Queue, video_cap: tuple = None):
         # TODO remove after testing
         print('Started video_stream')
         while True:
-            for i in range(int(stream_fps) * 2):
+            for i in range(int(stream_fps)//2):
                 ret, frame = cap.read()
                 # Return if video ended
                 if not ret:

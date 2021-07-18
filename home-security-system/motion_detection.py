@@ -77,7 +77,6 @@ def process_movement(init_frame, frame, processed_queue, time_queue, processed_f
 
     gray = gaussian_blur(frame)
     contours = find_contours(init_frame, gray, threshold_val, min_contour_area)
-
     # If contours exists, movement is detected
     if contours:
         movement_flag = True
@@ -109,6 +108,9 @@ def process_movement(init_frame, frame, processed_queue, time_queue, processed_f
         size = len(processed_frames)
         if size > frame_padding:
             processed_frames.pop(0)
+    # TODO move counter > 900 save
+    if counter["mov_total"] > 900:
+        pass
 
     return counter, movement_flag, processed_frames
 
