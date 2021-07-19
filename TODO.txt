@@ -5,7 +5,6 @@ Known Bugs:
 
 - The same face maybe recognised twice (Coords overlap)
 - Memory runs out if movement is for a very long time
-- Win10Toast requires dependencies that isn' pip installed.
 
 To implement:
 -------------

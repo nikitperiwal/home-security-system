@@ -2,7 +2,6 @@ import cv2
 import numpy as np
 from queue import Queue
 from threading import Thread
-# from win10toast import ToastNotifier
 
 from face_recognition import encode_images, check_similarity
 from video_stream import video_stream, save_queue
@@ -12,6 +11,7 @@ from face_detection import detect_from_video
 from utils.add_borders import add_borders
 from utils.check_param import verify_face_register, verify_hss_args, verify_stream
 from utils.register_face import load_faces, save_faces
+from utils.notify import create_notification
 
 
 class HomeSecuritySystem:
@@ -115,18 +115,15 @@ class HomeSecuritySystem:
 
                 processed_queue.put(np.array(frame_list))
 
-                # TODO add notification and timestamp
-                '''
-                intruder_count = sum([1 if label == "Cannot Identify" else 0 for label in detected_faces])
-                intruder_count /= len(detected_faces)
-                if intruder_count >= 0.2:
-                    toaster = ToastNotifier()
+                intruder_count = sum([1 if "Cannot Identify" in label else 0 for label in face_labels])
+                intruder_count /= len(face_labels)
+
+                if intruder_count >= 0.4:
                     import datetime as dt
-                    timestamp = dt.datetime.today()
-                    toaster.show_toast("Home Security System",
-                                       f"Intruder detected at {timestamp:%m/%d, %H:%M:%S}",
-                                       threaded=True)
-                '''
+                    time = dt.datetime.now()
+                    message = f"Intruder detected! Please check the video stored at {time: %Y-%m-%d %H:%M:%S}"
+                    create_notification("Home Security System", message)
+
         except Exception as e:
             print(f"While recognising face exception occurred: \n{e}")
         finally:
@@ -190,7 +187,7 @@ class HomeSecuritySystem:
 
 
 if __name__ == '__main__':
-    cam_0 = cv2.VideoCapture("IGNORE/video1.mp4")
+    cam_0 = cv2.VideoCapture("IGNORE/video.mp4")
     server = HomeSecuritySystem(vid_streams=(cam_0, ))
 
     # my_image = cv2.cvtColor(cv2.resize(cv2.imread("IGNORE/my_image.jpg"), (128, 128)), cv2.COLOR_BGR2RGB)
