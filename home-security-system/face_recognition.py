@@ -49,9 +49,11 @@ def encode_images(image_list: np.ndarray) -> np.ndarray:
 
     # Check Statements
     if not isinstance(image_list, np.ndarray):
+        print(type(image_list))
         raise ValueError("image_list should have d-type: np.ndarray")
 
     if len(image_list.shape) != 4 or image_list.shape[-3:] != (128, 128, 3):
+        print(image_list.shape)
         raise ValueError("image_list should be of the shape (?, 128, 128, 3)")
 
     global encoder
@@ -60,7 +62,7 @@ def encode_images(image_list: np.ndarray) -> np.ndarray:
     return encodings
 
 
-def check_similarity(tensor_1: np.ndarray, tensor_2: np.ndarray, threshold: float = 1.0) -> np.ndarray:
+def check_similarity(tensor_1: np.ndarray, tensor_2: np.ndarray, threshold: float = 1.4) -> np.ndarray:
     """
     Takes two tensors and returns the similarity between them.
 

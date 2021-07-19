@@ -98,16 +98,21 @@ class HomeSecuritySystem:
 
                 # Run face detection and label detected faces
                 frame_coords, face_index, detected_faces = detect_from_video(frame_list)
-                detected_faces = encode_images(detected_faces)
-                detected_labels = self.check_registered(detected_faces)
 
-                # Tag labels to individual frames
-                face_labels = []
-                for indexes in face_index:
-                    face_labels.append([detected_labels[index] for index in indexes])
+                # Runs Face Recognition, if faces are detected.
+                if len(detected_faces) > 0:
+                    # Getting labels for detected face.
+                    detected_faces = encode_images(detected_faces)
+                    detected_labels = self.check_registered(detected_faces)
 
-                # adding borders to frames where face was detected
-                frame_list = add_borders(frame_list, frame_coords, face_labels)
+                    # Tag labels to individual frames
+                    face_labels = []
+                    for indexes in face_index:
+                        face_labels.append([detected_labels[index] for index in indexes])
+
+                    # adding borders to frames where face was detected
+                    frame_list = add_borders(frame_list, frame_coords, face_labels)
+
                 processed_queue.put(np.array(frame_list))
 
                 # TODO add notification and timestamp
@@ -136,6 +141,7 @@ class HomeSecuritySystem:
         vid_stream: A cv2.VideoCapture object
         vid_src: Selects the source for cv2.VideoCapture object
         """
+
         verify_stream(vid_stream, vid_src)
         if vid_stream is None:
             vid_stream = cv2.VideoCapture(0) if vid_src is None or vid_src == "" \
@@ -184,7 +190,7 @@ class HomeSecuritySystem:
 
 
 if __name__ == '__main__':
-    cam_0 = cv2.VideoCapture(0)
+    cam_0 = cv2.VideoCapture("IGNORE/video1.mp4")
     server = HomeSecuritySystem(vid_streams=(cam_0, ))
 
     # my_image = cv2.cvtColor(cv2.resize(cv2.imread("IGNORE/my_image.jpg"), (128, 128)), cv2.COLOR_BGR2RGB)

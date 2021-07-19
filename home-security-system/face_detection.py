@@ -78,8 +78,9 @@ def extract_faces(frame_list, face_index, coords_list):
             for index in indexes:
                 (x1, y1, x2, y2) = coords_list[index]
                 face = frame[y1:y2, x1:x2]
-                faces.append(cv2.resize(face, (128, 128)))
-
+                face = cv2.resize(face, (128, 128))
+                if face.shape == (128, 128, 3):
+                    faces.append(face)
     return np.array(faces)
 
 
