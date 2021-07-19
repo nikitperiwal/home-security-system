@@ -113,16 +113,17 @@ class HomeSecuritySystem:
                     # adding borders to frames where face was detected
                     frame_list = add_borders(frame_list, frame_coords, face_labels)
 
+                    intruder_count = sum([1 if "Cannot Identify" in label else 0 for label in face_labels])
+                    intruder_count /= len(face_labels)
+
+                    if intruder_count >= 0.4:
+                        # TODO Timestamp?
+                        import datetime as dt
+                        time = dt.datetime.now()
+                        message = f"Intruder detected! Please check the video stored at {time: %Y-%m-%d %H:%M:%S}"
+                        create_notification("Home Security System", message)
+
                 processed_queue.put(np.array(frame_list))
-
-                intruder_count = sum([1 if "Cannot Identify" in label else 0 for label in face_labels])
-                intruder_count /= len(face_labels)
-
-                if intruder_count >= 0.4:
-                    import datetime as dt
-                    time = dt.datetime.now()
-                    message = f"Intruder detected! Please check the video stored at {time: %Y-%m-%d %H:%M:%S}"
-                    create_notification("Home Security System", message)
 
         except Exception as e:
             print(f"While recognising face exception occurred: \n{e}")
