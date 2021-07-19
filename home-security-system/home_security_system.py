@@ -60,28 +60,25 @@ class HomeSecuritySystem:
         num_det = len(detected_faces)
 
         if num_reg == 0:
-            return ["Cannot Identify"]*num_det
+            return ["Cannot Identify"] * num_det
 
-        tensor1 = []
-        tensor2 = []
+        labels = []
         for d in detected_faces:
+            predictions = []
             for name in names:
-                tensor1.extend([d] * len(self.registered_faces[name]))
-                tensor2.extend(self.registered_faces[name])
-        tensor1 = np.array(tensor1)
-        tensor2 = np.array(tensor2)
+                t1 = self.registered_faces[name]
+                t2 = np.tile(d, (len(t1), 1))
+                pred = np.mean(check_similarity(t1, t2))
+                predictions.append(pred)
+            predictions = np.array(predictions)
 
-        pred = check_similarity(tensor1, tensor2)
-        pred = pred.reshape(num_det, num_reg, -1)
-        pred = pred.mean(axis=-1)
+            def get_labels(arr):
+                index = arr.argmin()
+                if arr[index] <= 0.5:
+                    return names[index]
+                return "Cannot Identify"
 
-        def get_labels(arr):
-            index = arr.argmin()
-            if arr[index] <= 0.5:
-                return names[index]
-            return "Cannot Identify"
-
-        labels = [get_labels(p) for p in pred]
+            labels.append(get_labels(predictions))
         return labels
 
     def facial_recognition(self, queue: Queue, processed_queue: Queue):
