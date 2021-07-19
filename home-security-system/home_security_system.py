@@ -117,7 +117,7 @@ class HomeSecuritySystem:
                     intruder_count /= len(face_labels)
 
                     if intruder_count >= 0.4:
-                        # TODO Timestamp?
+                        # TODO Timestamp??
                         import datetime as dt
                         time = dt.datetime.now()
                         message = f"Intruder detected! Please check the video stored at {time: %Y-%m-%d %H:%M:%S}"
