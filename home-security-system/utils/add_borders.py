@@ -1,14 +1,16 @@
 import cv2
+import numpy as np
+from utils.check_param import verify_border_args
 
 
-def create_borders(img, coords, labels):
+def create_borders(img, coords, labels) -> np.ndarray:
     """
     Creating the borders for a single frame from the coordinates given
     """
 
     for label, coord in zip(labels, coords):
         # Setting color as red to indicate person is unregistered
-        color = (0, 0, 230) if label == "Cannot Identify" else (230, 0, 0)
+        color = (230, 0, 0) if label == "Cannot Identify" else (0, 0, 230)
         x1, y1, x2, y2 = coord
         # For bounding box
         img = cv2.rectangle(img, (x1, y1), (x1+x2, y1+y2), color, 2)
@@ -27,7 +29,7 @@ def create_borders(img, coords, labels):
     return img
 
 
-def add_borders(frame_list, frame_coords, face_labels):
+def add_borders(frame_list: np.ndarray, frame_coords: list, face_labels: list) -> list:
     """
     Returns a list of frames with bounding boxes
 
@@ -42,6 +44,7 @@ def add_borders(frame_list, frame_coords, face_labels):
     list_with_bb: A list of frames containing the bounding boxes
     """
 
+    verify_border_args(frame_list, frame_coords, face_labels)
     list_with_bb = []
     for frame, coords, labels in zip(frame_list, frame_coords, face_labels):
         if labels:

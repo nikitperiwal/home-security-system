@@ -13,5 +13,5 @@ def load_faces():
             face_dict = unpickler.load()
             return face_dict
     except FileNotFoundError:
-        print("No faces registered")
+        print("No registered faces found")
         return {}

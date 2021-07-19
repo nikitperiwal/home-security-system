@@ -12,3 +12,5 @@ To implement:
 - Multiple threads for motion detection on multiple camera streams,
     single thread for face detection and recognition which accesses a combined queue.
 - Variable number of images for registered_faces
+- Settings
+    - Option to disable save if no faces detected

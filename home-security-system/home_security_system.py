@@ -10,14 +10,20 @@ from motion_detection import motion_detection
 from face_detection import detect_from_video
 
 from utils.add_borders import add_borders
-from utils.record_n_frames import record_n_frames
-from utils.check_param import verify_face_register
+from utils.check_param import verify_face_register, verify_hss_args, verify_stream
 from utils.register_face import load_faces, save_faces
 
 
 class HomeSecuritySystem:
-    def __init__(self):
+    def __init__(self, vid_streams: tuple = None):
+        """
+        Parameters
+        -----------
+        vid_streams: a tuple containing VideoCapture objects
+        """
+        verify_hss_args(vid_streams)
         self.registered_faces = load_faces()
+        self.vid_streams = (cv2.VideoCapture(0),) if vid_streams is None else tuple(vid_streams)
 
     def face_register(self, name: str, face_images: np.ndarray):
         """
@@ -78,12 +84,20 @@ class HomeSecuritySystem:
         labels = [get_labels(p) for p in pred]
         return labels
 
-    def facial_recognition(self, queue, processed_queue):
+    def facial_recognition(self, queue: Queue, processed_queue: Queue):
+        """
+        Detects faces and passes it for face recognition
+        """
+
         try:
             while True:
                 frame_list = queue.get()
-                if frame_list == "End":
-                    break
+                if isinstance(frame_list, str):
+                    if frame_list == "End":
+                        break
+                    elif frame_list == "wait":
+                        processed_queue.put("wait")
+                        continue
 
                 # Run face detection and label detected faces
                 frame_coords, face_index, detected_faces = detect_from_video(frame_list)
@@ -97,7 +111,7 @@ class HomeSecuritySystem:
 
                 # adding borders to frames where face was detected
                 frame_list = add_borders(frame_list, frame_coords, face_labels)
-                processed_queue.put(frame_list)
+                processed_queue.put(np.array(frame_list))
 
                 # TODO add notification and timestamp
                 '''
@@ -112,29 +126,28 @@ class HomeSecuritySystem:
                                        threaded=True)
                 '''
         except Exception as e:
-            print(e)
+            print(f"While recognising face exception occurred: \n{e}")
         finally:
             processed_queue.put("End")
 
-    def start_detecting(self, vid_stream: tuple = None, video_src: str = None):
+    def start_detecting(self, vid_stream: cv2.VideoCapture = None, vid_src: int = None):
         """
         Starts detecting motion and recognises a faces of people
 
         Parameters
         ----------
-        vid_stream: A tuple containing cv2.VideoCapture object and a cam_flag
-        video_src: Selects the source for cv2.VideoCapture object
+        vid_stream: A cv2.VideoCapture object
+        vid_src: Selects the source for cv2.VideoCapture object
         """
-
+        verify_stream(vid_stream, vid_src)
         if vid_stream is None:
-            vid_stream = (cv2.VideoCapture(0), True) if video_src is None or video_src == "" \
-                else (cv2.VideoCapture(video_src), False)
+            vid_stream = cv2.VideoCapture(0) if vid_src is None or vid_src == "" \
+                else cv2.VideoCapture(vid_src)
 
         queue, processed_queue, time_queue, final_queue = Queue(), Queue(), Queue(), Queue()
-        stream_fps = int(vid_stream[0].get(cv2.CAP_PROP_FPS))
-        t1 = Thread(target=video_stream, args=(queue, vid_stream))
-        t2 = Thread(target=motion_detection, args=(queue, processed_queue, time_queue, stream_fps))
-
+        stream_fps = int(vid_stream.get(cv2.CAP_PROP_FPS))
+        t1 = Thread(target=video_stream, args=(queue, vid_stream), daemon=True)
+        t2 = Thread(target=motion_detection, args=(queue, processed_queue, time_queue, stream_fps), daemon=True)
         # TODO bug fix fps (may vary from pc)
         t3 = Thread(target=self.facial_recognition, args=(processed_queue, final_queue))
         t4 = Thread(target=save_queue, args=(final_queue, time_queue, stream_fps // 3 + 1))
@@ -144,27 +157,42 @@ class HomeSecuritySystem:
             t2.start()
             t3.start()
             t4.start()
-            while t2.is_alive():
+            while t3.is_alive():
                 pass
 
         except KeyboardInterrupt:
             print("Stopping the recording")
 
         finally:
-            vid_stream[0].release()
-            t1.join()
-            t2.join()
+            vid_stream.release()
             t3.join()
             t4.join()
 
+    def start_camera(self, cam_index: int):
+        """
+        Starts detecting for any potential dangerous situation
+
+        Parameters
+        ----------
+        cam_index: Specifies the camera
+        """
+        try:
+            if not isinstance(cam_index, int):
+                raise TypeError("Camera index should be an integer")
+            elif cam_index < 0 or cam_index >= len(self.vid_streams):
+                raise ValueError(f"Cam Index out of range. Camera at index {cam_index} could not be found.")
+            self.start_detecting(vid_stream=self.vid_streams[cam_index])
+        except Exception as e:
+            print(e)
+
 
 if __name__ == '__main__':
-    vid = cv2.VideoCapture("IGNORE/video.mp4")
+    cam_0 = cv2.VideoCapture(0)
+    server = HomeSecuritySystem(vid_streams=(cam_0, ))
 
-    my_image = cv2.cvtColor(cv2.resize(cv2.imread("IGNORE/my_image.jpg"), (128, 128)), cv2.COLOR_BGR2RGB)
-    my_image = np.array([my_image, my_image, my_image])
-
-    server = HomeSecuritySystem()
+    # my_image = cv2.cvtColor(cv2.resize(cv2.imread("IGNORE/my_image.jpg"), (128, 128)), cv2.COLOR_BGR2RGB)
+    # my_image = np.array([my_image, my_image, my_image])
     # server.face_register("Nikit", my_image)
+    # server.face_register("Niranjan", my_image)
 
-    server.start_detecting((vid, True))
+    server.start_camera(0)

@@ -30,7 +30,7 @@ def get_encoder_model():
     ], name="Encode_Model")
 
     # Loading the model weights
-    encode_model.load_weights("Models/encoder")
+    encode_model.load_weights("models/encoder")
     return encode_model
 
 
@@ -60,7 +60,7 @@ def encode_images(image_list: np.ndarray) -> np.ndarray:
     return encodings
 
 
-def check_similarity(tensor_1: np.ndarray, tensor_2: np.ndarray, threshold: float = 1.4) -> np.ndarray:
+def check_similarity(tensor_1: np.ndarray, tensor_2: np.ndarray, threshold: float = 1.0) -> np.ndarray:
     """
     Takes two tensors and returns the similarity between them.
 
