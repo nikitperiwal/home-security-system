@@ -21,12 +21,14 @@ def video_stream(queue: Queue, video_cap: tuple = None):
         stream_fps = cap.get(cv2.CAP_PROP_FPS)
         frames = []
         stop_flag, init_cam = False, True
+
         # TODO remove after testing
         print('Started video_stream')
 
         while True:
             for i in range(int(stream_fps)//2):
                 ret, frame = cap.read()
+
                 # Return if video ended
                 if not ret:
                     stop_flag = True

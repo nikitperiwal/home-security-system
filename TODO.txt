@@ -12,3 +12,4 @@ To implement:
     single thread for face detection and recognition which accesses a combined queue.
 - Settings
     - Option to disable save if no faces detected
+- check if face already registered, using face-recognition.
