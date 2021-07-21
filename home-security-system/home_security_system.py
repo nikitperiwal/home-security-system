@@ -40,7 +40,17 @@ class HomeSecuritySystem:
         # Appends to vid_stream and returns the index.
         self.vid_streams.append(vid_stream)
         self.stream_status.append(False)
-        return len(self.vid_streams)
+        return len(self.vid_streams) - 1
+
+    def kill_video_stream(self, index):
+        """
+        Kills the video_stream at the given index
+        """
+        if index >= len(self.vid_streams):
+            print(f"Camera {index} not found")
+            return
+        self.vid_streams.pop(index).release()
+        self.stream_status.pop(index)
 
     def register_person(self, name: str, face_images: np.ndarray):
         """
@@ -107,13 +117,25 @@ class HomeSecuritySystem:
 
             # Creating the motion_detection thread and storing it
             motion_thread = Thread(target=motion_detection,
-                                   args=(vid_stream, vid_index, self.motion_files),
-                                   daemon=True)
+                                   args=(vid_stream, vid_index, self.motion_files))
             motion_thread.start()
+            print(self.motion_files.get())
             self.motion_threads.append(motion_thread)
             self.stream_status[cam_index] = True
+
+            while motion_thread.is_alive():
+                pass
+        
+        except KeyboardInterrupt:
+            print("Please wait till the termination is completed to avoid corrupt save files")
+
         except Exception as e:
             print(e)
+
+        finally:
+            self.kill_video_stream(cam_index)
+            motion_thread.join()
+            print("Program terminated")
 
 
 if __name__ == '__main__':
