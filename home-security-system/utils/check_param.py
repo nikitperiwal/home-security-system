@@ -45,20 +45,6 @@ def verify_save_args(q, time_q,  fps):
         raise TypeError("FPS is not of type int")
 
 
-def verify_face_register(name, face_images, registered):
-    """"
-    Verifies the Register_Faces parameter.
-    """
-    if not isinstance(name, str):
-        raise ValueError("name should have d-type: str")
-    if len(name) == 0:
-        raise ValueError("name cannot be empty")
-    if name in list(registered):
-        raise ValueError("Name already exists in Secure Faces List\nPlease enter another Name")
-    if face_images > 3:
-        print("Only first 3 images for the person would be registered")
-
-
 def verify_border_args(frame_list, frame_coords, face_labels):
     """
     Verifies the arguments passed to add_borders 

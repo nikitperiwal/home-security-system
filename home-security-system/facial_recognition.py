@@ -1,8 +1,11 @@
 import os
 import cv2
 import numpy as np
+
+from utils.register_face import load_faces
 from utils.add_borders import add_borders
-from utils.notify import create_notification
+from utils.alert import create_notification
+
 from face_detection import detect_from_video
 from face_recognition import encode_images, check_similarity
 
@@ -33,13 +36,13 @@ def read_video(filename):
 def save_video(frame_list, filename, fps):
     """ Writes the video to the filename specified """
 
-    if not os.path.exists("Detected Videos/"):
-        os.makedirs("Detected Videos/")
     video_path = f"Detected Videos/{filename}.mp4"
+    directory = os.path.dirname(video_path)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
 
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     out = cv2.VideoWriter(video_path, fourcc, fps, resolution)
-
     for frame in frame_list:
         out.write(frame)
     out.release()
@@ -106,7 +109,7 @@ def facial_recognition(registered_faces, filename, intruder_threshold=0.2):
 
     Parameters
     -----------
-    registered_faces: dict of registered faces in HSS.
+    registered_faces: Dict containing people already registered
     filename: filename for the video to run facial recognition on
     intruder_threshold: threshold upon which alert generated
     """
@@ -139,7 +142,14 @@ def facial_recognition(registered_faces, filename, intruder_threshold=0.2):
         print(f"Error while facial recognition on file: {filename}\n Error: {e}")
 
 
+def start_facial_recognition(registered_faces, file_queue):
+    """ Continously checks the file_queue for files. If file found, runs facial recognition """
+
+    while True:
+        filename = file_queue.get()
+        facial_recognition(registered_faces, filename)
+
+
 if __name__ == "__main__":
-    from utils.register_face import load_faces
     rf = load_faces()
     facial_recognition(rf, "video2.mp4")

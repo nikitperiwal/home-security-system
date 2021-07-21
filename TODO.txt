@@ -1,3 +1,14 @@
+
+Home Security System
+---------------
+- Register Faces  | Delete Faces  | Change Face Images
+- Register Camera | Delete Camera   (How to handle? Camera ID)
+- Start Camera    | Stop Camera     (How to handle threads)
+- Face Detection + Recognition process
+- Settings: Resolution, Location, Save if no faces etc
+- Save camera, faces, settings etc.
+- Delete motion files after face detection done.
+
 Known Bugs:
 -----------
 - High(Variable) fps while saving video with stream fps using video_stream.save_queue
@@ -5,12 +16,3 @@ Known Bugs:
 
 - The same face maybe recognised twice (Coords overlap)
 - Memory runs out if movement is for a very long time
-
-To implement:
--------------
-- Multiple threads for motion detection on multiple camera streams,
-    single thread for face detection and recognition which accesses a combined queue.
-- Settings
-    - Option to disable save if no faces detected
-- check if face already registered, using face-recognition.
-- read> motion-detect> out, save memory.

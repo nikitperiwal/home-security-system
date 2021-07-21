@@ -1,20 +1,27 @@
 import cv2
 import numpy as np
-from queue import Queue
+
 from threading import Thread
+from multiprocessing import Process, Queue
 
 from face_recognition import encode_images
 from motion_detection import motion_detection
+from facial_recognition import start_facial_recognition
 from video_stream import video_stream, save_queue
 
-from utils.register_face import load_faces, save_faces
-from utils.check_param import verify_face_register
+from utils.register_face import *
 
 
 class HomeSecuritySystem:
     def __init__(self):
         self.vid_streams = []
+        self.stream_status = []
+        self.motion_threads = []
+
         self.registered_faces = load_faces()
+        self.motion_files = Queue()
+        self.surveillance_process = Process(target=start_facial_recognition,
+                                            args=(self.registered_faces, self.motion_files))
 
     def add_video_stream(self, vid_stream):
         """
@@ -25,7 +32,6 @@ class HomeSecuritySystem:
         vid_stream: The video stream object, can be cv2.VideoCapture obj, filename or IP address.
         """
 
-        # TODO - CHECK ONE
         if not isinstance(vid_stream, cv2.VideoCapture):
             vid_stream = cv2.VideoCapture(vid_stream)
         if vid_stream is None or not vid_stream.isOpened():
@@ -33,11 +39,12 @@ class HomeSecuritySystem:
 
         # Appends to vid_stream and returns the index.
         self.vid_streams.append(vid_stream)
+        self.stream_status.append(False)
         return len(self.vid_streams)
 
-    def face_register(self, name: str, face_images: np.ndarray):
+    def register_person(self, name: str, face_images: np.ndarray):
         """
-        Registers faces as secure, along with name.
+        Registers a Person, along with name and images.
 
         Parameters
         -----------
@@ -45,8 +52,37 @@ class HomeSecuritySystem:
         face_images: Numpy array of the face images for the person
         """
 
-        verify_face_register(name, len(face_images), self.registered_faces.keys())
+        verify_register_person(name, len(face_images), self.registered_faces.keys())
         self.registered_faces[name] = encode_images(face_images[:3])
+        save_faces(self.registered_faces)
+
+    def delete_person(self, name: str):
+        """
+        Deletes the registered person from the database.
+
+        Parameters
+        -----------
+        name : Name of the person to delete
+        """
+
+        verify_delete_person(name, self.registered_faces.keys())
+        self.registered_faces.pop(name, None)
+        save_faces(self.registered_faces)
+
+    def rename_person(self, old_name: str, new_name: str):
+        """
+        Renames the person already existing in the database.
+
+        Parameters
+        -----------
+        old_name : Name of the person to change.
+        new_name : New name of the person.
+        """
+
+        verify_rename_person(old_name, new_name, self.registered_faces.keys())
+
+        self.registered_faces[new_name] = self.registered_faces[old_name]
+        self.registered_faces.pop(old_name, None)
         save_faces(self.registered_faces)
 
     def start_camera(self, cam_index: int):
@@ -64,46 +100,20 @@ class HomeSecuritySystem:
             elif cam_index < 0 or cam_index >= len(self.vid_streams):
                 raise ValueError(f"Cam Index out of range. Camera at index {cam_index} could not be found.")
 
-            self.start_detecting(vid_stream=self.vid_streams[cam_index])
+            if self.stream_status[cam_index]:
+                return "Camera already running"
+
+            vid_stream = self.vid_streams[cam_index]
+
+            # Creating the motion_detection thread and storing it
+            motion_thread = Thread(target=motion_detection,
+                                   args=(vid_stream, vid_index, self.motion_files),
+                                   daemon=True)
+            motion_thread.start()
+            self.motion_threads.append(motion_thread)
+            self.stream_status[cam_index] = True
         except Exception as e:
             print(e)
-
-    def start_detecting(self, vid_stream: cv2.VideoCapture = None, vid_src: int = None):
-        """
-        Starts detecting motion and recognises a faces of people
-
-        Parameters
-        ----------
-        vid_stream: A cv2.VideoCapture object
-        vid_src: Selects the source for cv2.VideoCapture object
-        """
-
-        queue, processed_queue, time_queue, final_queue = Queue(), Queue(), Queue(), Queue()
-
-        stream_fps = int(vid_stream.get(cv2.CAP_PROP_FPS))
-
-        t1 = Thread(target=video_stream, args=(queue, vid_stream), daemon=True)
-        t2 = Thread(target=motion_detection, args=(queue, processed_queue, time_queue, stream_fps), daemon=True)
-
-        # TODO bug fix fps (may vary from pc)
-        t3 = Thread(target=self.facial_recognition, args=(processed_queue, final_queue))
-        t4 = Thread(target=save_queue, args=(final_queue, time_queue, stream_fps // 3 + 1))
-
-        try:
-            t1.start()
-            t2.start()
-            t3.start()
-            t4.start()
-            while t3.is_alive():
-                pass
-
-        except KeyboardInterrupt:
-            print("Stopping the recording")
-
-        finally:
-            vid_stream.release()
-            t3.join()
-            t4.join()
 
 
 if __name__ == '__main__':
