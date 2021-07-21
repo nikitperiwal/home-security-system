@@ -13,3 +13,4 @@ To implement:
 - Settings
     - Option to disable save if no faces detected
 - check if face already registered, using face-recognition.
+- read> motion-detect> out, save memory.

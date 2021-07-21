@@ -78,7 +78,7 @@ def extract_faces(frame_list, face_index, coords_list):
             for index in indexes:
                 (x1, y1, x2, y2) = coords_list[index]
                 face = frame[y1:y2, x1:x2]
-                face = cv2.resize(face, (128, 128))
+                face = cv2.cvtColor(cv2.resize(face, (128, 128)), cv2.COLOR_BGR2RGB)
                 if face.shape == (128, 128, 3):
                     faces.append(face)
     return np.array(faces)
@@ -103,7 +103,7 @@ def detect_from_image(image: np.ndarray):
     faces = cascade_model.detectMultiScale(
         gray,
         scaleFactor=1.4,
-        minNeighbors=5,
+        minNeighbors=6,
         minSize=(30, 30)
     )
     return np.array(faces)
@@ -131,4 +131,3 @@ def detect_from_video(frame_list):
     face_coords, face_index = remove_extra_faces(frame_coords)
     detected_faces = extract_faces(frame_list=frame_list, face_index=face_index, coords_list=face_coords)
     return frame_coords, face_index, detected_faces
-

@@ -1,6 +1,6 @@
 import cv2
-from queue import Queue
 import numpy as np
+from queue import Queue
 
 
 def verify_motion_args(q, processed_q, time_q, threshold_val, min_contour_area, update_init_thres, frame_padding):

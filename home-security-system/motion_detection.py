@@ -4,6 +4,8 @@ import numpy as np
 from queue import Queue
 from utils.check_param import verify_motion_args
 
+resolution = (1280, 720)
+
 
 def gaussian_blur(frame):
     """
@@ -126,8 +128,8 @@ def process_movement(init_frame, frame, processed_queue, time_queue, processed_f
     return counter, movement_flag, processed_frames, wait_flag
 
 
-def motion_detection(queue: Queue, processed_queue: Queue, time_queue: Queue, stream_fps: int, threshold_val: int = 100,
-                     min_contour_area: int = 1000, frame_padding: int = -1, update_init_thres: int = 100) -> None:
+def motion_detection(vid_stream, threshold_val: int = 100, min_contour_area: int = 1000,
+                     frame_padding: int = -1, update_init_thres: int = 100) -> None:
     """
     Detects motions from the frames in the queue. The frames where motion is detected are added to processed queue
 
@@ -143,9 +145,9 @@ def motion_detection(queue: Queue, processed_queue: Queue, time_queue: Queue, st
     update_init_thres:
     """
 
-    verify_motion_args(queue, processed_queue, time_queue, threshold_val,
-                       min_contour_area, update_init_thres, frame_padding)
+    verify_motion_args(threshold_val, min_contour_area, update_init_thres, frame_padding)
 
+    stream_fps = int(vid_stream.get(cv2.CAP_PROP_FPS))
     frame_padding = frame_padding if frame_padding > -1 else stream_fps * 2
     counter = {'mov': 0, 'no_mov': 0, 'mov_total': 0}
     init_frame = None
@@ -154,21 +156,21 @@ def motion_detection(queue: Queue, processed_queue: Queue, time_queue: Queue, st
 
     try:
         while True:
-            frames = queue.get()
-            if isinstance(frames, str) and frames == "End":
+            ret, frame = vid_stream.read()
+            if not ret:
                 break
-            # Looping through each frame
-            for frame in frames:
+            frame = cv2.resize(frame, resolution)
 
-                # Updating the initial frame
-                init_flag, counter = update_init_frame(init_frame, update_init_thres, counter)
-                if init_flag:
-                    init_frame = gaussian_blur(frame)
-                    continue
-                # Checking for movement
-                X = process_movement(init_frame, frame, processed_queue, time_queue, processed_frames, counter,
-                                     movement_flag, threshold_val, min_contour_area, frame_padding, wait_flag)
-                counter, movement_flag, processed_frames, wait_flag = X
+            # Updating the initial frame
+            init_flag, counter = update_init_frame(init_frame, update_init_thres, counter)
+            if init_flag:
+                init_frame = gaussian_blur(frame)
+                continue
+
+            # Checking for movement
+            X = process_movement(init_frame, frame, processed_frames, counter,
+                                 movement_flag, threshold_val, min_contour_area, frame_padding, wait_flag)
+            counter, movement_flag, processed_frames, wait_flag = X
 
     except Exception as e:
         print(f"While detecting motion, exception occurred: \n{e}")
