@@ -165,6 +165,7 @@ def motion_detection(vid_stream, vid_index: int, queue, threshold_val: int = 100
                     for i in range(len(processed_frames)):
                         out.write(cv2.resize(processed_frames.pop(0), resolution))
                     processed_frames = []
+
                 # when movement stops
                 elif counter['no_mov'] <= frame_padding:
                     out.write(cv2.resize(frame, resolution))

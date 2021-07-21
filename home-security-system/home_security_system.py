@@ -7,7 +7,6 @@ from multiprocessing import Process, Queue
 from face_recognition import encode_images
 from motion_detection import motion_detection
 from facial_recognition import start_facial_recognition
-from video_stream import video_stream, save_queue
 
 from utils.register_face import *
 
@@ -43,9 +42,8 @@ class HomeSecuritySystem:
         return len(self.vid_streams) - 1
 
     def kill_video_stream(self, index):
-        """
-        Kills the video_stream at the given index
-        """
+        """ Kills the video_stream at the given index """
+
         if index >= len(self.vid_streams):
             print(f"Camera {index} not found")
             return
@@ -143,13 +141,11 @@ if __name__ == '__main__':
     # my_image1 = cv2.cvtColor(cv2.resize(cv2.imread("IGNORE/my_image1.jpg"), (128, 128)), cv2.COLOR_BGR2RGB)
     # my_image2 = cv2.cvtColor(cv2.resize(cv2.imread("IGNORE/my_image2.jpg"), (128, 128)), cv2.COLOR_BGR2RGB)
     # my_image = np.array([my_image, my_image1, my_image2])
-
     # server = HomeSecuritySystem()
-    # server.face_register("Nikit", my_image)
+    # server.register_person("Nikit", my_image)
+    # server.register_person("Niranjan", my_image)
 
-    # server.face_register("Niranjan", my_image)
-
-    cam_0 = cv2.VideoCapture("IGNORE/video.mp4")
+    cam_0 = cv2.VideoCapture("IGNORE/video2.mp4")
     server = HomeSecuritySystem()
     vid_index = server.add_video_stream(vid_stream=cam_0)
     server.start_camera(vid_index)

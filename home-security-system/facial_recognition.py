@@ -2,7 +2,6 @@ import os
 import cv2
 import numpy as np
 
-from utils.register_face import load_faces
 from utils.add_borders import add_borders
 from utils.alert import create_notification
 
@@ -148,8 +147,3 @@ def start_facial_recognition(registered_faces, file_queue):
     while True:
         filename = file_queue.get()
         facial_recognition(registered_faces, filename)
-
-
-if __name__ == "__main__":
-    rf = load_faces()
-    facial_recognition(rf, "video2.mp4")

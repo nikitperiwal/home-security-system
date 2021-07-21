@@ -1,3 +1,4 @@
+import os
 import pickle
 from multiprocessing import Manager
 
@@ -45,17 +46,22 @@ def verify_rename_person(old_name, new_name, registered):
 
 
 def save_faces(face_dict):
-    with open("registered_faces.pickle", "wb") as f:
-        pickle.dump(face_dict, f)
+    with open("data/registered_faces.pickle", "wb") as f:
+        values = face_dict.items()
+        pickle.dump(values, f)
 
 
 def load_faces():
     try:
-        with open("registered_faces.pickle", "rb") as file:
+        with open("data/registered_faces.pickle", "rb") as file:
+            manager = Manager()
             unpickler = pickle.Unpickler(file)
-            face_dict = unpickler.load()
+            values = unpickler.load()
+            face_dict = manager.dict()
+            for name, faces in values:
+                face_dict[name] = faces
             return face_dict
-    except FileNotFoundError:
-        print("No registered faces found")
+    except Exception as e:
+        print(f"No registered faces found {e}")
         manager = Manager()
         return manager.dict()
