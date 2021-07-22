@@ -125,7 +125,6 @@ def motion_detection(vid_stream, vid_index: int, queue, threshold_val: int = 100
     filepath, out, save_path = None, None, "Motion Videos/" + str(vid_index) + "/"
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
 
-    # TODO index
     if not os.path.exists(save_path):
         os.makedirs(save_path)
 
@@ -193,9 +192,12 @@ def motion_detection(vid_stream, vid_index: int, queue, threshold_val: int = 100
 
     finally:
         if out is not None:
+            """
             if counter['mov_total'] > 50:
                 queue.put(filepath)
             else:
                 remove_file(filepath)
+            """
+            queue.put(filepath)
             queue.put("EXIT")
             out.release()

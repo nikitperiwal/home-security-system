@@ -7,6 +7,7 @@ def verify_register_person(name, face_images, registered):
     """"
     Verifies the Register_Person parameter.
     """
+    # TODO add check faces and not names
     if not isinstance(name, str):
         raise ValueError("name should have d-type: str")
     if len(name) == 0:
@@ -46,9 +47,14 @@ def verify_rename_person(old_name, new_name, registered):
 
 
 def save_faces(face_dict):
-    with open("data/registered_faces.pickle", "wb") as f:
-        values = face_dict.items()
-        pickle.dump(values, f)
+    try:
+        if not os.path.exists("data/"):
+            os.makedirs("data/")
+        with open("data/registered_faces.pickle", "wb") as f:
+            values = face_dict.items()
+            pickle.dump(values, f)
+    except Exception as e:
+        print(e)
 
 
 def load_faces():

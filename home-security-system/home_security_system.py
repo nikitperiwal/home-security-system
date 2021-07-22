@@ -30,7 +30,6 @@ class HomeSecuritySystem:
         -----------
         vid_stream: The video stream object, can be cv2.VideoCapture obj, filename or IP address.
         """
-
         if not isinstance(vid_stream, cv2.VideoCapture):
             vid_stream = cv2.VideoCapture(vid_stream)
         if vid_stream is None or not vid_stream.isOpened():
@@ -59,10 +58,12 @@ class HomeSecuritySystem:
         name       : Name of the person to register
         face_images: Numpy array of the face images for the person
         """
-
-        verify_register_person(name, len(face_images), self.registered_faces.keys())
-        self.registered_faces[name] = encode_images(face_images[:3])
-        save_faces(self.registered_faces)
+        try:
+            verify_register_person(name, len(face_images), self.registered_faces.keys())
+            self.registered_faces[name] = encode_images(face_images[:3])
+            save_faces(self.registered_faces)
+        except Exception as e:
+            print(e)
 
     def delete_person(self, name: str):
         """
@@ -115,9 +116,9 @@ class HomeSecuritySystem:
 
             # Creating the motion_detection thread and storing it
             motion_thread = Thread(target=motion_detection,
-                                   args=(vid_stream, vid_index, self.motion_files))
+                                   args=(vid_stream, cam_index, self.motion_files))
             motion_thread.start()
-            print(self.motion_files.get())
+            self.surveillance_process.start()
             self.motion_threads.append(motion_thread)
             self.stream_status[cam_index] = True
 
@@ -133,6 +134,7 @@ class HomeSecuritySystem:
         finally:
             self.kill_video_stream(cam_index)
             motion_thread.join()
+            self.surveillance_process.join()
             print("Program terminated")
 
 
@@ -145,7 +147,7 @@ if __name__ == '__main__':
     # server.register_person("Nikit", my_image)
     # server.register_person("Niranjan", my_image)
 
-    cam_0 = cv2.VideoCapture("IGNORE/video2.mp4")
+    cam_0 = cv2.VideoCapture(0)
     server = HomeSecuritySystem()
     vid_index = server.add_video_stream(vid_stream=cam_0)
     server.start_camera(vid_index)

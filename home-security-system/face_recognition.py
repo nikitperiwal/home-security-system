@@ -1,5 +1,6 @@
 import numpy as np
 import tensorflow as tf
+import os
 
 from tensorflow.keras import layers
 from tensorflow.keras.applications import Xception
@@ -30,6 +31,7 @@ def get_encoder_model():
     ], name="Encode_Model")
 
     # Loading the model weights
+    print(os.listdir("resources/models/"))
     encode_model.load_weights("resources/models/encoder")
     return encode_model
 
@@ -58,7 +60,10 @@ def encode_images(image_list: np.ndarray) -> np.ndarray:
 
     global encoder
     image_list = preprocess_input(image_list)
+    # TODO remove
+    print(image_list.shape, "encorder")
     encodings = encoder.predict(image_list)
+    print("a")
     return encodings
 
 
@@ -90,3 +95,4 @@ def check_similarity(tensor_1: np.ndarray, tensor_2: np.ndarray, threshold: floa
 
 # Create the resources as global variables
 encoder = get_encoder_model()
+print(encoder.load_weights())
