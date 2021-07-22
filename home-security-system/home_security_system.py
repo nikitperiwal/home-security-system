@@ -2,8 +2,8 @@ import cv2
 import numpy as np
 
 from threading import Thread
-from multiprocessing import Process, Queue
-
+#from multiprocessing import Process, Queue
+from queue import Queue
 from face_recognition import encode_images
 from motion_detection import motion_detection
 from facial_recognition import start_facial_recognition
@@ -19,7 +19,7 @@ class HomeSecuritySystem:
 
         self.registered_faces = load_faces()
         self.motion_files = Queue()
-        self.surveillance_process = Process(target=start_facial_recognition,
+        self.surveillance_process = Thread(target=start_facial_recognition,
                                             args=(self.registered_faces, self.motion_files))
 
     def add_video_stream(self, vid_stream):

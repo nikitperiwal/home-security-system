@@ -93,7 +93,6 @@ def check_registered(registered_faces, detected_faces):
                 return names[index]
             return "Cannot Identify"
 
-        print(predictions)
         labels.append(get_labels(predictions))
     return labels
 
@@ -120,49 +119,48 @@ def facial_recognition(registered_faces, filepath, intruder_threshold=0.2):
         if len(detected_faces) > 0:
             # Getting labels for detected face.
             detected_faces = encode_images(detected_faces)
-            # TODO remove
-            print(detected_faces.shape)
             detected_labels = check_registered(registered_faces, detected_faces)
-            # TODO remove
-            print(detected_labels)
 
             # Tag labels to individual frames
             face_labels = []
             for indexes in face_index:
                 face_labels.append([detected_labels[index] for index in indexes])
-            print(face_labels)
             # adding borders to frames where face was detected
             frame_list = add_borders(frame_list, frame_coords, face_labels)
             # Raising alert
             raise_alert(filename, face_labels, intruder_threshold)
-        # TODO remove
-        print(filename)
+
         save_video(frame_list, filename, fps)
-    # TODO REMOVE comments
-    # except Exception as e:
-    #    print(f"Error while facial recognition on file: {filepath}\n Error: {e}")
+
+    except Exception as e:
+       print(f"Error while facial recognition on file: {filepath}\n Error: {e}")
+
     finally:
         pass
-
-
-def call_facial_rec(registered_faces, file_queue):
-    while True:
-        filepath = file_queue.get()
-        if filepath == "EXIT":
-            print("Exiting facial recognition")
-            break
-        facial_recognition(registered_faces, filepath)
 
 
 def start_facial_recognition(registered_faces, file_queue):
     """ Continously checks the file_queue for files. If file found, runs facial recognition """
 
+    filepath = None
     try:
-        face_rec_thread = Thread(target = call_facial_rec, args=(registered_faces, file_queue))    
-        face_rec_thread.start()
-        while face_rec_thread.is_alive():
-            pass
+        while True:
+            filepath = file_queue.get()
+
+            if filepath == "EXIT":
+                print("Exiting facial recognition")
+                break
+            facial_recognition(registered_faces, filepath)
+
     except KeyboardInterrupt:
-        print("Keyboard Interrupt")
-    finally:
-        face_rec_thread.join()
+        if not filepath:
+            filepath = file_queue.get()
+        while True:
+            if filepath == "EXIT":
+                print("Exiting facial recognition")
+                break
+            facial_recognition(registered_faces, filepath)
+            filepath = file_queue.get()
+
+    except Exception as e:
+        print(f"Exception occured when starting facial recognition \nError: {e}")

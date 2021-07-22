@@ -10,7 +10,7 @@ def create_borders(img, coords, labels) -> np.ndarray:
 
     for label, coord in zip(labels, coords):
         # Setting color as red to indicate person is unregistered
-        color = (230, 0, 0) if label == "Cannot Identify" else (0, 0, 230)
+        color = (0, 0, 230) if label == "Cannot Identify" else (230, 0, 0)
         x1, y1, x2, y2 = coord
         # For bounding box
         img = cv2.rectangle(img, (x1, y1), (x1+x2, y1+y2), color, 2)
