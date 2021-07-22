@@ -1,10 +1,10 @@
 import os
 import cv2
 import numpy as np
-from threading import Thread
 
 from utils.add_borders import add_borders
 from utils.alert import create_notification
+from utils.remove_file import remove_file
 
 from face_detection import detect_from_video
 from face_recognition import encode_images, check_similarity
@@ -131,6 +131,7 @@ def facial_recognition(registered_faces, filepath, intruder_threshold=0.2):
             raise_alert(filename, face_labels, intruder_threshold)
 
         save_video(frame_list, filename, fps)
+        remove_file(filepath)
 
     except Exception as e:
        print(f"Error while facial recognition on file: {filepath}\n Error: {e}")

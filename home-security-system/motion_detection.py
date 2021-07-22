@@ -192,12 +192,9 @@ def motion_detection(vid_stream, vid_index: int, queue, threshold_val: int = 100
 
     finally:
         if out is not None:
-            """
             if counter['mov_total'] > 50:
                 queue.put(filepath)
             else:
                 remove_file(filepath)
-            """
-            queue.put(filepath)
             queue.put("EXIT")
             out.release()
