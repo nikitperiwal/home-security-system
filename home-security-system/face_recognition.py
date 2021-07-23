@@ -30,7 +30,7 @@ def get_encoder_model():
     ], name="Encode_Model")
 
     # Loading the model weights
-    encode_model.load_weights("models/encoder")
+    encode_model.load_weights("resources/models/encoder")
     return encode_model
 
 
@@ -88,5 +88,4 @@ def check_similarity(tensor_1: np.ndarray, tensor_2: np.ndarray, threshold: floa
     return prediction
 
 
-# Create the models as global variables
 encoder = get_encoder_model()

@@ -1,8 +1,10 @@
 import cv2
+import os
 import time
-import numpy as np
-from queue import Queue
 from utils.check_param import verify_motion_args
+from utils.remove_file import remove_file
+
+resolution = (1280, 720)
 
 
 def gaussian_blur(frame):
@@ -58,8 +60,8 @@ def update_init_frame(init_frame, update_init_thres, counter):
     return False, counter
 
 
-def process_movement(init_frame, frame, processed_queue, time_queue, processed_frames, counter, movement_flag,
-                     threshold_val, min_contour_area, frame_padding, wait_flag) -> (list, bool, list, bool):
+def check_movement(init_frame, frame, counter, movement_flag,
+                   threshold_val, min_contour_area) -> (list, bool, list, bool):
     """
     Checks if any movement is detected in the frame with the help of contours
 
@@ -69,112 +71,130 @@ def process_movement(init_frame, frame, processed_queue, time_queue, processed_f
     init_frame: The initial frame with which the current frame is compared to
     counter: The counter for the frames
     movement_flag: A boolean indicating whether movement was detected or not
-    wait_flag: A boolean indicating if movement is taking too long
+    threshold_val: The thresh value in cv2.threshold.
+    min_contour_area: Minimum area of contour.
 
     Returns
     -------
     counter: Counter for frames
     movement_flag: A boolean indicating whether movement was detected or not
-    processed_frames: A list of processed frames
     """
 
     gray = gaussian_blur(frame)
     contours = find_contours(init_frame, gray, threshold_val, min_contour_area)
+
+    # updating counters
     # If contours exists, movement is detected
     if contours:
         movement_flag = True
-        processed_frames.append(frame)
         counter['no_mov'] = 0
         counter['mov'] += 1
-
     # when movement is stopped
     elif movement_flag:
-        # pad frames with 2 frame if save_all_frames is false
         counter['mov_total'] += counter['mov']
         counter['mov'] = 0
         counter['no_mov'] += 1
-        if counter['no_mov'] < frame_padding:
-            processed_frames.append(frame)
-        elif counter['no_mov'] >= frame_padding:
-            # Save the video and start recording again
-            if counter['mov_total'] > 20:
-                if not wait_flag:
-                    time_queue.put(str(time.strftime("%d-%m-%Y-%H-%M-%S", time.localtime())))
-                processed_queue.put(np.array(processed_frames))
-            movement_flag, wait_flag, init_frame, processed_frames = False, False, None, []
-            counter['mov'], counter['no_mov'], counter['mov_total'] = 0, 0, 0
-            # If the video has some unprocessed frames left, run them till all frames are processed
-            print("Waiting for next movement")
 
-    # If no movement is detected
-    elif not movement_flag:
-        processed_frames.append(frame)
-        size = len(processed_frames)
-        if size > frame_padding:
-            processed_frames.pop(0)
-
-    # TODO notify user if movement greater than thres
-    # put frames into the queue if movement is taking too long
-    if counter["mov_total"] >= 150:
-        processed_queue.put(np.array(processed_frames))
-        processed_queue.put("wait")
-        if not wait_flag:
-            time_queue.put(str(time.strftime("%d-%m-%Y-%H-%M-%S", time.localtime())))
-        movement_flag, wait_flag, init_frame, processed_frames = False, True, None, []
-        counter['mov'], counter['no_mov'], counter['mov_total'] = 0, 0, 0
-
-    return counter, movement_flag, processed_frames, wait_flag
+    return counter, movement_flag
 
 
-def motion_detection(queue: Queue, processed_queue: Queue, time_queue: Queue, stream_fps: int, threshold_val: int = 100,
-                     min_contour_area: int = 1000, frame_padding: int = -1, update_init_thres: int = 100) -> None:
+def motion_detection(vid_stream, vid_index: int, queue, threshold_val: int = 100, min_contour_area: int = 1000,
+                     frame_padding: int = -1, update_init_thres: int = 100) -> None:
     """
     Detects motions from the frames in the queue. The frames where motion is detected are added to processed queue
 
     Parameters
     ----------
-    queue: Queue containing the list of frames to be processed
-    processed_queue: Queue containing the list of frames to be processed
-    time_queue: Queue containing the timestamps when motion was detected
-    stream_fps:
+    vid_stream: A cv2.VideoCapture object
+    vid_index: The index of the camera
+    queue: Queue where to put the file names into
     threshold_val: The thresh value in cv2.threshold.
     min_contour_area: Minimum area of contour.
     frame_padding: The number of frame with which the video should be padded.
-    update_init_thres:
+    update_init_thres: The threshold value before updating the initial frame
     """
 
-    verify_motion_args(queue, processed_queue, time_queue, threshold_val,
-                       min_contour_area, update_init_thres, frame_padding)
+    #verify_motion_args(vid_stream, vid_index, queue, threshold_val, min_contour_area, frame_padding, update_init_thres)
 
-    frame_padding = frame_padding if frame_padding > -1 else stream_fps * 2
+    stream_fps = int(vid_stream.get(cv2.CAP_PROP_FPS))
+    frame_padding = frame_padding if frame_padding > -1 else stream_fps
     counter = {'mov': 0, 'no_mov': 0, 'mov_total': 0}
     init_frame = None
-    movement_flag, wait_flag = False, False
+    mov_flag, first_mov_flag, init_cam_flag = False, True, True
     processed_frames = []
+    filepath, out, save_path = None, None, "Motion Videos/" + str(vid_index) + "/"
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
 
     try:
         while True:
-            frames = queue.get()
-            if isinstance(frames, str) and frames == "End":
-                break
-            # Looping through each frame
-            for frame in frames:
+            ret, frame = vid_stream.read()
 
-                # Updating the initial frame
-                init_flag, counter = update_init_frame(init_frame, update_init_thres, counter)
-                if init_flag:
-                    init_frame = gaussian_blur(frame)
-                    continue
-                # Checking for movement
-                X = process_movement(init_frame, frame, processed_queue, time_queue, processed_frames, counter,
-                                     movement_flag, threshold_val, min_contour_area, frame_padding, wait_flag)
-                counter, movement_flag, processed_frames, wait_flag = X
+            # Return if video ended
+            if not ret:
+                break
+            # This is executed once to prevent black frames during the initial read
+            elif init_cam_flag:
+                init_cam_flag = False
+                for j in range(10):
+                    frame = vid_stream.read()[1]
+            frame = cv2.resize(frame, resolution)
+
+            # Updating the initial frame
+            init_flag, counter = update_init_frame(init_frame, update_init_thres, counter)
+            if init_flag:
+                init_frame = gaussian_blur(frame)
+                continue
+
+            # Checking for movement
+            counter, mov_flag = check_movement(init_frame, frame, counter, mov_flag,
+                                               threshold_val, min_contour_area)
+
+            # If movement detected
+            if mov_flag:
+                # When movement starts
+                if first_mov_flag:
+                    first_mov_flag = False
+                    filepath = save_path + str(time.strftime("%d-%m-%Y-%H-%M-%S", time.localtime())) + ".mp4"
+                    # TODO add stream_fps to setting
+                    out = cv2.VideoWriter(filepath, fourcc, stream_fps // 3, resolution)
+                    print("Saving Video")
+                    for i in range(len(processed_frames)):
+                        out.write(cv2.resize(processed_frames.pop(0), resolution))
+                    processed_frames = []
+
+                # when movement stops
+                elif counter['no_mov'] <= frame_padding:
+                    out.write(cv2.resize(frame, resolution))
+
+                elif counter['no_mov'] > frame_padding:
+                    if counter['mov_total'] < 50:
+                        remove_file(filepath)
+                    else:
+                        queue.put(filepath)
+                    mov_flag, init_frame = False, None
+                    first_mov_flag = True
+                    counter['mov'], counter['no_mov'], counter['mov_total'] = 0, 0, 0
+                    # If the video has some unprocessed frames left, run them till all frames are processed
+                    print("Waiting for next movement")
+
+            # If no movement is detected
+            elif not mov_flag:
+                processed_frames.append(frame)
+                if len(processed_frames) > frame_padding:
+                    processed_frames.pop(0)
+            # TODO notify user if movement greater than thres
 
     except Exception as e:
         print(f"While detecting motion, exception occurred: \n{e}")
 
     finally:
-        if processed_frames:
-            time_queue.put(str(time.strftime("%d-%m-%Y-%H-%M-%S", time.localtime())))
-            processed_queue.put(np.array(processed_frames))
-        processed_queue.put("End")
+        if out is not None:
+            if counter['mov_total'] > 50:
+                queue.put(filepath)
+            else:
+                remove_file(filepath)
+            queue.put("EXIT")
+            out.release()

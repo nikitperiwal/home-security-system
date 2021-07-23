@@ -1,18 +1,18 @@
 import cv2
-from queue import Queue
 import numpy as np
+from queue import Queue
 
 
-def verify_motion_args(q, processed_q, time_q, threshold_val, min_contour_area, update_init_thres, frame_padding):
+def verify_motion_args(vid_stream, vid_index, q, threshold_val, min_contour_area, frame_padding, update_init_thres):
     """
     Verify the arguments received from motion_detection.motion_detection
     """
+    if not isinstance(vid_stream, cv2.VideoCapture):
+        raise TypeError("vid_stream must be a VideoCapture object")
+    if not isinstance(vid_index, int):
+        raise TypeError("The vid_index must be an int")
     if not isinstance(q, Queue):
-        raise TypeError("Input queue is not of type queue.Queue")
-    if not isinstance(processed_q, Queue):
-        raise TypeError("Processed queue is not of type queue.Queue")
-    if not isinstance(time_q, Queue):
-        raise TypeError("Time queue is not of type queue.Queue")
+        raise TypeError("The queue argument should be of type queue.Queue")
     if not isinstance(threshold_val, int) or threshold_val > 255:
         raise Exception("threshold_val should be an integer between 0 and 255")
     if not isinstance(min_contour_area, int):
@@ -43,20 +43,6 @@ def verify_save_args(q, time_q,  fps):
         raise TypeError("Time queue is not of type queue.Queue")
     if not isinstance(fps, int):
         raise TypeError("FPS is not of type int")
-
-
-def verify_face_register(name, face_images, registered):
-    """"
-    Verifies the Register_Faces parameter.
-    """
-    if not isinstance(name, str):
-        raise ValueError("name should have d-type: str")
-    if len(name) == 0:
-        raise ValueError("name cannot be empty")
-    if name in list(registered):
-        raise ValueError("Name already exists in Secure Faces List\nPlease enter another Name")
-    if face_images > 3:
-        print("Only first 3 images for the person would be registered")
 
 
 def verify_border_args(frame_list, frame_coords, face_labels):
