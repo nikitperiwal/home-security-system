@@ -30,7 +30,7 @@ def get_encoder_model():
     ], name="Encode_Model")
 
     # Loading the model weights
-    encode_model.load_weights("resources/models/encoder")
+    encode_model.load_weights("data/models/encoder")
     return encode_model
 
 

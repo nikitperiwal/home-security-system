@@ -7,7 +7,6 @@ Home Security System
 - Face Detection + Recognition process
 - Settings: Resolution, Location, Save if no faces etc
 - Save camera, faces, settings etc.
-- Delete motion files after face detection done.
 
 Known Bugs:
 -----------

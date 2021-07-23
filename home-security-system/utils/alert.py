@@ -9,5 +9,5 @@ def create_notification(title, message):
         title=title,
         message=message,
         app_name='Home Security Server',
-        app_icon='resources/icon.' + ('ico' if platform == 'win' else 'png')
+        app_icon='data/icons/icon.' + ('ico' if platform == 'win' else 'png')
     )

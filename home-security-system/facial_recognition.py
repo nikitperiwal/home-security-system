@@ -33,10 +33,12 @@ def read_video(filepath):
 
 def save_video(frame_list, filename, fps):
     """ Writes the video to the filename specified """
+
     video_path = f"Detected Videos/{filename}"
     directory = os.path.dirname(video_path)
     if not os.path.exists(directory):
         os.makedirs(directory)
+
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     out = cv2.VideoWriter(video_path, fourcc, fps, resolution)
     for frame in frame_list:
@@ -125,8 +127,10 @@ def facial_recognition(registered_faces, filepath, intruder_threshold=0.2):
             face_labels = []
             for indexes in face_index:
                 face_labels.append([detected_labels[index] for index in indexes])
+
             # adding borders to frames where face was detected
             frame_list = add_borders(frame_list, frame_coords, face_labels)
+
             # Raising alert
             raise_alert(filename, face_labels, intruder_threshold)
 
@@ -136,9 +140,6 @@ def facial_recognition(registered_faces, filepath, intruder_threshold=0.2):
     except Exception as e:
         print(f"Error while facial recognition on file: {filepath}\n Error: {e}")
 
-    finally:
-        pass
-
 
 def start_facial_recognition(registered_faces, file_queue):
     """ Continously checks the file_queue for files. If file found, runs facial recognition """
@@ -147,21 +148,11 @@ def start_facial_recognition(registered_faces, file_queue):
     try:
         while True:
             filepath = file_queue.get()
-
             if filepath == "EXIT":
                 print("Exiting facial recognition")
                 break
-            facial_recognition(registered_faces, filepath)
 
-    except KeyboardInterrupt:
-        if not filepath:
-            filepath = file_queue.get()
-        while True:
-            if filepath == "EXIT":
-                print("Exiting facial recognition")
-                break
             facial_recognition(registered_faces, filepath)
-            filepath = file_queue.get()
 
     except Exception as e:
         print(f"Exception occured when starting facial recognition \nError: {e}")

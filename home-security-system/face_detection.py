@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 
-cascade_model = cv2.CascadeClassifier("resources/models/haarcascade_frontalface_default.xml")
+cascade_model = cv2.CascadeClassifier("data/models/haarcascade_frontalface_default.xml")
 
 
 def fix_coords(coords, resolution=(1280, 720), delta=50):
