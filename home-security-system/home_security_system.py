@@ -20,7 +20,7 @@ class HomeSecuritySystem:
         self.registered_faces = load_faces()
         self.motion_files = Queue()
         self.surveillance_process = Thread(target=start_facial_recognition,
-                                            args=(self.registered_faces, self.motion_files))
+                                           args=(self.registered_faces, self.motion_files))
 
     def add_video_stream(self, vid_stream):
         """
@@ -147,7 +147,7 @@ if __name__ == '__main__':
     # server.register_person("Nikit", my_image)
     # server.register_person("Niranjan", my_image)
 
-    cam_0 = cv2.VideoCapture(0)
+    cam_0 = cv2.VideoCapture("IGNORE/video.mp4")
     server = HomeSecuritySystem()
     vid_index = server.add_video_stream(vid_stream=cam_0)
     server.start_camera(vid_index)

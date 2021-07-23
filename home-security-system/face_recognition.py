@@ -58,10 +58,7 @@ def encode_images(image_list: np.ndarray) -> np.ndarray:
 
     global encoder
     image_list = preprocess_input(image_list)
-    # TODO remove
-    print(image_list.shape, "Encorder")
     encodings = encoder.predict(image_list)
-    print("a")
     return encodings
 
 
