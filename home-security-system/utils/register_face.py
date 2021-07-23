@@ -7,14 +7,13 @@ def verify_register_person(name, face_images, registered):
     """"
     Verifies the Register_Person parameter.
     """
-    # TODO add check faces and not names
     if not isinstance(name, str):
         raise ValueError("name should have d-type: str")
     if len(name) == 0:
         raise ValueError("name cannot be empty")
     if name in registered:
         raise ValueError("Name already exists in Secure Faces List\nPlease enter another Name")
-    if face_images > 3:
+    if face_images.shape[0] > 3:
         print("Only first 3 images for the person would be registered")
 
 
@@ -54,7 +53,7 @@ def save_faces(face_dict):
             values = face_dict.items()
             pickle.dump(values, f)
     except Exception as e:
-        print(e)
+        print(f"Exception occurred while saving face_dict. \nError:{e}")
 
 
 def load_faces():

@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 
-cascade_model = cv2.CascadeClassifier("resources/models/haarcascade_frontalface_default.xml")
+cascade_model = cv2.CascadeClassifier("data/models/haarcascade_frontalface_default.xml")
 
 
 def remove_extra_faces(detected_list):

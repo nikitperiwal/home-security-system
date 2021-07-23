@@ -1,8 +1,10 @@
 import cv2
 import os
 import time
+
 from utils.check_param import verify_motion_args
 from utils.remove_file import remove_file
+from utils.alert import create_notification
 
 resolution = (1280, 720)
 
@@ -47,8 +49,6 @@ def update_init_frame(init_frame, update_init_thres, counter):
     """
 
     if init_frame is None:
-        # TODO remove after testing
-        print('Started motion_detection')
         return True, counter
 
     # If the movement lasts for more than threshold, update the initial frame
@@ -61,7 +61,7 @@ def update_init_frame(init_frame, update_init_thres, counter):
 
 
 def check_movement(init_frame, frame, counter, movement_flag,
-                   threshold_val, min_contour_area) -> (list, bool, list, bool):
+                   threshold_val, min_contour_area) -> (list, bool):
     """
     Checks if any movement is detected in the frame with the help of contours
 
@@ -89,9 +89,9 @@ def check_movement(init_frame, frame, counter, movement_flag,
         movement_flag = True
         counter['no_mov'] = 0
         counter['mov'] += 1
+        counter['mov_total'] += 1
     # when movement is stopped
     elif movement_flag:
-        counter['mov_total'] += counter['mov']
         counter['mov'] = 0
         counter['no_mov'] += 1
 
@@ -114,7 +114,7 @@ def motion_detection(vid_stream, vid_index: int, queue, threshold_val: int = 100
     update_init_thres: The threshold value before updating the initial frame
     """
 
-    #verify_motion_args(vid_stream, vid_index, queue, threshold_val, min_contour_area, frame_padding, update_init_thres)
+    verify_motion_args(vid_stream, vid_index, queue, threshold_val, min_contour_area, frame_padding, update_init_thres)
 
     stream_fps = int(vid_stream.get(cv2.CAP_PROP_FPS))
     frame_padding = frame_padding if frame_padding > -1 else stream_fps
@@ -122,16 +122,17 @@ def motion_detection(vid_stream, vid_index: int, queue, threshold_val: int = 100
     init_frame = None
     mov_flag, first_mov_flag, init_cam_flag = False, True, True
     processed_frames = []
-    filepath, out, save_path = None, None, "Motion Videos/" + str(vid_index) + "/"
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    filepath, out, save_path = None, None, "Detected Videos/Unprocessed Videos/" + str(vid_index) + "/"
+    fourcc = cv2.VideoWriter_fourcc(*'XVID')
 
     if not os.path.exists(save_path):
         os.makedirs(save_path)
-
     try:
+        # TODO remove after testing
+        print('Started motion_detection')
         while True:
+            # TODO reimplement from videostream.py
             ret, frame = vid_stream.read()
-
             # Return if video ended
             if not ret:
                 break
@@ -157,13 +158,22 @@ def motion_detection(vid_stream, vid_index: int, queue, threshold_val: int = 100
                 # When movement starts
                 if first_mov_flag:
                     first_mov_flag = False
-                    filepath = save_path + str(time.strftime("%d-%m-%Y-%H-%M-%S", time.localtime())) + ".mp4"
+                    filepath = save_path + str(time.strftime("%d-%m-%Y-%H-%M-%S", time.localtime())) + ".avi"
                     # TODO add stream_fps to setting
                     out = cv2.VideoWriter(filepath, fourcc, stream_fps // 3, resolution)
                     print("Saving Video")
                     for i in range(len(processed_frames)):
                         out.write(cv2.resize(processed_frames.pop(0), resolution))
                     processed_frames = []
+
+                elif counter['mov_total'] > 300:
+                    msg = f"Movement Detected for a long period of time! \nPlease check {filepath[-25:]}"
+                    create_notification("Home Security System", msg)
+                    queue.put(filepath)
+                    counter['mov'], counter['no_mov'], counter['mov_total'] = 0, 0, 0
+                    init_frame = None
+                    first_mov_flag = True
+                    mov_flag = False
 
                 # when movement stops
                 elif counter['no_mov'] <= frame_padding:
@@ -174,8 +184,9 @@ def motion_detection(vid_stream, vid_index: int, queue, threshold_val: int = 100
                         remove_file(filepath)
                     else:
                         queue.put(filepath)
-                    mov_flag, init_frame = False, None
+                    mov_flag = False
                     first_mov_flag = True
+                    init_frame = None
                     counter['mov'], counter['no_mov'], counter['mov_total'] = 0, 0, 0
                     # If the video has some unprocessed frames left, run them till all frames are processed
                     print("Waiting for next movement")
@@ -185,7 +196,6 @@ def motion_detection(vid_stream, vid_index: int, queue, threshold_val: int = 100
                 processed_frames.append(frame)
                 if len(processed_frames) > frame_padding:
                     processed_frames.pop(0)
-            # TODO notify user if movement greater than thres
 
     except Exception as e:
         print(f"While detecting motion, exception occurred: \n{e}")

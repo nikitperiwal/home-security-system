@@ -30,8 +30,14 @@ def get_encoder_model():
     ], name="Encode_Model")
 
     # Loading the model weights
-    encode_model.load_weights("resources/models/encoder")
+    encode_model.load_weights("data/models/encoder")
     return encode_model
+
+
+def init_encoder():
+    global encoder
+    # Create the resources as global variables
+    encoder = get_encoder_model()
 
 
 def encode_images(image_list: np.ndarray) -> np.ndarray:
@@ -58,10 +64,7 @@ def encode_images(image_list: np.ndarray) -> np.ndarray:
 
     global encoder
     image_list = preprocess_input(image_list)
-    # TODO remove
-    print(image_list.shape, "Encorder")
     encodings = encoder.predict(image_list)
-    print("a")
     return encodings
 
 
@@ -91,4 +94,4 @@ def check_similarity(tensor_1: np.ndarray, tensor_2: np.ndarray, threshold: floa
     return prediction
 
 
-encoder = get_encoder_model()
+encoder = None

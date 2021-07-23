@@ -1,16 +1,37 @@
-import os
 import cv2
+import time
 import numpy as np
 
 from utils.add_borders import add_borders
 from utils.alert import create_notification
 from utils.remove_file import remove_file
+from utils.register_face import *
 
 from face_detection import detect_from_video
-from face_recognition import encode_images, check_similarity
+from face_recognition import encode_images, check_similarity, init_encoder
 
 
 resolution = (1280, 720)
+
+
+def register_person(name: str, face_images: np.ndarray, registered_faces):
+    """
+    Registers a Person, along with name and images.
+
+    Parameters
+    -----------
+    name       : Name of the person to register
+    face_images: Numpy array of the face images for the person
+    registered_faces: The dictionary of registered faces
+    """
+    try:
+        registered_faces[name] = encode_images(face_images[:3])
+        save_faces(registered_faces)
+        print(f"Registered {name}")
+    except Exception as e:
+        print(f"Error occurred while registering face. \nError: {e}")
+    # TODO return and check performance
+    # return registered_faces
 
 
 def read_video(filepath):
@@ -37,10 +58,13 @@ def save_video(frame_list, filename, fps):
     directory = os.path.dirname(video_path)
     if not os.path.exists(directory):
         os.makedirs(directory)
+
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     out = cv2.VideoWriter(video_path, fourcc, fps, resolution)
+
     for frame in frame_list:
         out.write(frame)
+
     out.release()
 
 
@@ -111,7 +135,7 @@ def facial_recognition(registered_faces, filepath, intruder_threshold=0.2):
 
     try:
         frame_list, fps = read_video(filepath)
-        filename = filepath[-25:]
+        filename = filepath[-25:-3] + "mp4"
         # Run face detection and label detected faces
         frame_coords, face_index, detected_faces = detect_from_video(frame_list)
 
@@ -134,23 +158,29 @@ def facial_recognition(registered_faces, filepath, intruder_threshold=0.2):
         remove_file(filepath)
 
     except Exception as e:
-       print(f"Error while facial recognition on file: {filepath}\n Error: {e}")
+        print(f"Error while facial recognition on file: {filepath}\n Error: {e}")
 
     finally:
         pass
 
 
-def start_facial_recognition(registered_faces, file_queue):
-    """ Continously checks the file_queue for files. If file found, runs facial recognition """
-
+def start_facial_recognition(registered_faces, file_queue, conn=None):
+    """ Continuously checks the file_queue for files. If file found, runs facial recognition """
     filepath = None
+
     try:
+        init_encoder()
+
         while True:
             filepath = file_queue.get()
-
-            if filepath == "EXIT":
+            if filepath == "Register":
+                name, images, registered_faces = conn.recv()
+                register_person(name, images, registered_faces)
+            elif filepath == "EXIT":
                 print("Exiting facial recognition")
                 break
+            print(filepath)
+            time.sleep(1)
             facial_recognition(registered_faces, filepath)
 
     except KeyboardInterrupt:
@@ -164,4 +194,4 @@ def start_facial_recognition(registered_faces, file_queue):
             filepath = file_queue.get()
 
     except Exception as e:
-        print(f"Exception occured when starting facial recognition \nError: {e}")
+        print(f"Exception occurred when starting facial recognition \nError: {e}")
