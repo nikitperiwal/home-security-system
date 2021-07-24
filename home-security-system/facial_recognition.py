@@ -7,7 +7,8 @@ from utils.alert import create_notification
 from utils.remove_file import remove_file
 from utils.register_face import *
 
-from face_detection import detect_from_video
+# from face_detection import detect_from_video
+from onnx_face_detection import detect_from_video
 from face_recognition import encode_images, check_similarity, init_encoder
 
 

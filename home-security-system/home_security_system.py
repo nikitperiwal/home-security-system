@@ -1,4 +1,5 @@
 import cv2
+import time
 
 from threading import Thread
 from multiprocessing import Process, Queue, Pipe
@@ -154,8 +155,8 @@ if __name__ == '__main__':
     # my_image2 = cv2.cvtColor(cv2.resize(cv2.imread("IGNORE/my_image2.jpg"), (128, 128)), cv2.COLOR_BGR2RGB)
     # my_image = np.array([my_image, my_image1, my_image2])
 
-    cam_0 = cv2.VideoCapture(0)
-
+    cam_0 = cv2.VideoCapture("IGNORE/output.mp4")
+    t0 = time.time()
     try:
         with HomeSecuritySystem() as server:
             vid_index = server.add_video_stream(vid_stream=cam_0)
@@ -167,3 +168,4 @@ if __name__ == '__main__':
 
     except Exception as e:
         print(f"Exception: {e}")
+    print(f"Time taken: {time.time() - t0}")
