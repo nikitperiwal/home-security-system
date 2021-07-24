@@ -147,7 +147,7 @@ if __name__ == '__main__':
     # server.register_person("Nikit", my_image)
     # server.register_person("Niranjan", my_image)
 
-    cam_0 = cv2.VideoCapture("IGNORE/video.mp4")
+    cam_0 = cv2.VideoCapture("IGNORE/video2.mp4")
     server = HomeSecuritySystem()
     vid_index = server.add_video_stream(vid_stream=cam_0)
     server.start_camera(vid_index)
